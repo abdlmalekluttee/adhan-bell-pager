@@ -115,7 +115,7 @@ compiles PJSIP with the Python bindings.
 
 | Process | Automated? | How |
 |---|---|---|
-| Lint, 120+ tests, JavaScript/shell checks, Docker build and container smoke test | Yes | GitHub Actions `CI` on every push and pull request |
+| Lint, 110+ tests, JavaScript/shell checks, Docker build and container smoke test | Yes | GitHub Actions `CI` on every push and pull request |
 | Dependency update pull requests (Python, GitHub Actions, Docker base image) | Yes | Dependabot (weekly/monthly); security alerts and fixes enabled |
 | Release assets (bundle, checksums, notes) | Yes, on tags | `Release` workflow on `v*` tags |
 | Merging dependency updates | **No** | A maintainer merges only after CI passes (branch protection is not available for this private repository's plan) |
