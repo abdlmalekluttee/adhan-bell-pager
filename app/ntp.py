@@ -14,7 +14,6 @@ import datetime
 import logging
 import subprocess
 import threading
-import time
 from zoneinfo import ZoneInfo
 
 import ntplib

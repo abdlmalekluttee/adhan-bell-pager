@@ -1,15 +1,22 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.mypy_cache/
 .ruff_cache/
 .venv/
 venv/
-env/
-
+dist/
 config/
 audio/
 *.log
-
+.env
 .DS_Store
 Thumbs.db
+# Impeccable skill install (third-party tooling, installed per developer)
+.claude/
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
+node_modules/
+demo/
+demo-*/
+!.impeccable/design.json

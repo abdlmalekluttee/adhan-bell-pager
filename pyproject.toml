@@ -1,0 +1,23 @@
+[project]
+name = "adhan-bell-pager"
+description = "SIP paging for the Adhan and school bells, with timetables, roles and optional Active Directory sign-in."
+requires-python = ">=3.11"
+license = { text = "PolyForm-Noncommercial-1.0.0" }
+dynamic = ["version"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["demo*", "tests/live"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+ignore = ["E501", "B008", "B904", "E731"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402", "B011"]

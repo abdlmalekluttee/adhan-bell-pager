@@ -1,2 +1,2 @@
-"""Adhan Pager — automated SIP call-to-prayer paging system."""
-__version__ = "1.0.0"
+"""Adhan & Bell Pager — SIP paging for the call to prayer and school bells."""
+__version__ = "2.0.0"

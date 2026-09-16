@@ -1,0 +1,20 @@
+# Dependency update pull requests. Nothing merges or deploys automatically:
+# CI must pass and a maintainer reviews each PR. Deploy to servers with scripts/upgrade.sh.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      python-minor:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly

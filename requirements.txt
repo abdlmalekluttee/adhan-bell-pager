@@ -1,11 +1,14 @@
-adhanpy>=1.0.0
-fastapi>=0.110
-uvicorn[standard]>=0.29
-apscheduler>=3.10
-ntplib>=0.4
-PyYAML>=6.0
-python-multipart>=0.0.9
-pydantic>=2.6
-geonamescache>=2.0.0
-bcrypt>=4.0.0
-itsdangerous>=2.1.0
+# Runtime dependencies (tested versions). Dependabot proposes updates; CI must pass before merging.
+adhanpy==1.0.5
+bcrypt==5.0.0
+cryptography==50.0.1
+fastapi==0.141.1
+geonamescache==3.0.2
+ldap3==2.9.1
+ntplib==0.4.0
+pydantic==2.13.5
+python-multipart==0.0.32
+PyYAML==6.0.3
+starlette==1.6.0
+tzdata==2026.4
+uvicorn[standard]==0.53.0

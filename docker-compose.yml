@@ -1,37 +1,31 @@
-services:
-  adhan-pager:
-    build: .
-    image: adhan-pager:latest
-    container_name: adhan-pager
-    restart: unless-stopped
-
-    # Host networking is strongly recommended for SIP: it lets the UA register
-    # and pass RTP audio without Docker NAT mangling SIP/SDP. The web UI is then
-    # reachable on http://<host-ip>:8080 (set web.port in config to change it).
-    network_mode: host
-
-    environment:
-      - TZ=Africa/Tripoli            # container OS timezone
-      - CONFIG_PATH=/config/config.yaml
-      - AUDIO_DIR=/audio
-
-    volumes:
-      - ./config:/config             # persisted settings (config.yaml)
-      - ./audio:/audio               # uploaded Adhan recordings
-
-    # Optional: allow the container to step the system clock from NTP.
-    # Only needed if you enable "Set system clock" in the Time tab.
-    # cap_add:
-    #   - SYS_TIME
-
-# ---------------------------------------------------------------------------
-# If you cannot use host networking (e.g. Docker Desktop on macOS/Windows),
-# replace the service block's `network_mode: host` with explicit port mappings.
-# SIP and RTP behind NAT may need your PBX configured for it:
+# Adhan & Bell Pager
 #
-#   ports:
-#     - "8080:8080"          # web UI
-#     - "5060:5060/udp"      # SIP signalling
-#     - "5060:5060/tcp"
-#     - "16000-16100:16000-16100/udp"   # RTP media range
-# ---------------------------------------------------------------------------
+#   cp .env.example .env      # adjust WEB_PORT / TZ
+#   docker compose up -d --build
+#
+# Host networking is strongly recommended for SIP: registration and RTP audio
+# work without Docker NAT rewriting SIP/SDP. The web UI listens on WEB_PORT.
+services:
+  adhan-bell-pager:
+    build: .
+    image: adhan-bell-pager:${APP_VERSION:-local}
+    container_name: adhan-bell-pager
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: ${TZ:-Africa/Tripoli}
+      WEB_PORT: ${WEB_PORT:-8080}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      SIP_LOG_LEVEL: ${SIP_LOG_LEVEL:-3}
+    volumes:
+      - ./config:/config        # settings, database, secret key, logs, backups
+      - ./audio:/audio          # Adhan recordings and bell sounds
+    stop_grace_period: 30s      # lets an active page hang up cleanly
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # Only if you enable "Set system clock" in Time settings:
+    # cap_add: [SYS_TIME]
+    # environment: RUN_AS_ROOT: "1"

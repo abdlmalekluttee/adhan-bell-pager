@@ -23,8 +23,8 @@ have_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
-printf 'Adhan Pager preflight check\n'
-printf '===========================\n'
+printf 'Adhan & Bell Pager preflight check\n'
+printf '==================================\n'
 
 os_name="$(uname -s 2>/dev/null || printf 'unknown')"
 case "$os_name" in
@@ -92,13 +92,33 @@ port_busy() {
   return 1
 }
 
-for port in 8080 5060; do
-  if port_busy "$port"; then
-    warning "Port $port appears to be in use"
-  else
-    pass "Port $port appears free"
-  fi
-done
+web_port="${WEB_PORT:-}"
+if [ -z "$web_port" ] && [ -f .env ]; then
+  web_port="$(grep -E '^WEB_PORT=' .env | tail -1 | cut -d= -f2)"
+fi
+web_port="${web_port:-8080}"
+
+if have_cmd curl; then
+  pass "curl found"
+else
+  warning "curl is not installed (install and upgrade use it for health checks)"
+fi
+
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx adhan-bell-pager; then
+  pass "Adhan & Bell Pager is already running (its own ports are expected to be in use)"
+else
+  for port in "$web_port" 5060; do
+    if port_busy "$port"; then
+      if [ "$port" = "$web_port" ]; then
+        error "Web port $port is already used by another program. Set WEB_PORT in .env to a free port."
+      else
+        warning "SIP port $port appears to be in use. Set another local SIP port in the web UI after installing."
+      fi
+    else
+      pass "Port $port appears free"
+    fi
+  done
+fi
 
 if docker compose config >/dev/null 2>&1; then
   pass "docker-compose.yml is valid"

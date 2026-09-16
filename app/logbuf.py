@@ -11,13 +11,31 @@ import collections
 import logging
 import logging.handlers
 import os
+import re
 
 from . import config
 
-LOG_PATH = os.environ.get("LOG_PATH", "/config/adhan-pager.log")
+LOG_PATH = os.environ.get("LOG_PATH") or os.path.join(os.path.dirname(config.CONFIG_PATH), "adhan-pager.log")
 _FMT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 _ring: "collections.deque[str]" = collections.deque(maxlen=2000)
 _configured = False
+
+
+_SECRET_RE = re.compile(r"(?i)(password|passwd|secret|token)(\s*[=:]\s*)([^\s,;&]+)")
+
+
+class _RedactFilter(logging.Filter):
+    """Last line of defence: mask ``password=...`` style values in any log line."""
+
+    def filter(self, record):
+        try:
+            msg = record.getMessage()
+        except Exception:  # noqa: BLE001
+            return True
+        if _SECRET_RE.search(msg):
+            record.msg = _SECRET_RE.sub(lambda m: m.group(1) + m.group(2) + "***", msg)
+            record.args = ()
+        return True
 
 
 class _RingHandler(logging.Handler):
@@ -36,9 +54,11 @@ def setup(level: int = logging.INFO) -> None:
     root = logging.getLogger()
     root.setLevel(level)
     fmt = logging.Formatter(_FMT)
+    redact = _RedactFilter()
 
     console = logging.StreamHandler()
     console.setFormatter(fmt)
+    console.addFilter(redact)
     root.addHandler(console)
 
     try:
@@ -46,12 +66,14 @@ def setup(level: int = logging.INFO) -> None:
         fileh = logging.handlers.RotatingFileHandler(
             LOG_PATH, maxBytes=2 * 1024 * 1024, backupCount=3, encoding="utf-8")
         fileh.setFormatter(fmt)
+        fileh.addFilter(redact)
         root.addHandler(fileh)
     except Exception as e:  # noqa: BLE001
         root.warning("could not open log file %s: %s", LOG_PATH, e)
 
     ring = _RingHandler()
     ring.setFormatter(fmt)
+    ring.addFilter(redact)
     root.addHandler(ring)
     _configured = True
 

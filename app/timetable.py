@@ -58,7 +58,9 @@ def _norm_time(val: str) -> Optional[str]:
     m = _HHMMSS.match(val)
     if not m:
         return None
-    hh = int(m.group(1)); mm = int(m.group(2)); ss = int(m.group(3) or 0)
+    hh = int(m.group(1))
+    mm = int(m.group(2))
+    ss = int(m.group(3) or 0)
     if not (0 <= hh < 24 and 0 <= mm < 60 and 0 <= ss < 60):
         return None
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
@@ -74,7 +76,8 @@ def parse(text: str) -> Dict[str, Dict[str, str]]:
             continue
         dm = _DATE_RE.match(line)
         if dm:
-            month = int(dm.group(2)); day = int(dm.group(3))
+            month = int(dm.group(2))
+            day = int(dm.group(3))
             if 1 <= month <= 12 and 1 <= day <= 31:
                 cur_key = f"{month:02d}-{day:02d}"
                 table.setdefault(cur_key, {})

@@ -1,52 +1,61 @@
-# Adhan Pager — SIP call-to-prayer paging service
-# Builds PJSIP 2.14.1 with the pjsua2 Python bindings, then installs the app.
-FROM python:3.11-bookworm
+# syntax=docker/dockerfile:1
+# Adhan & Bell Pager — SIP paging for the Adhan and school bells.
+#
+# Stage 1 builds PJSIP with the pjsua2 Python bindings. Stage 2 is a slim runtime
+# that contains only the PJSIP shared libraries, the bindings, ffmpeg and the app.
 
+ARG PYTHON_VERSION=3.11
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS pjsip
+ARG PJ_VERSION=2.14.1
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential pkg-config swig wget ca-certificates \
+        libasound2-dev libssl-dev libopus-dev uuid-dev \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+RUN wget -q "https://github.com/pjsip/pjproject/archive/refs/tags/${PJ_VERSION}.tar.gz" -O pj.tar.gz \
+    && tar xzf pj.tar.gz && mv "pjproject-${PJ_VERSION}" pjproject && rm pj.tar.gz
+WORKDIR /build/pjproject
+RUN printf 'export CFLAGS += -fPIC -O2\nexport CXXFLAGS += -fPIC -O2\n' > user.mak \
+    && ./configure --prefix=/opt/pjsip --enable-shared --disable-video --disable-libyuv --disable-libwebrtc \
+    && make dep && make -j"$(nproc)" && make install
+WORKDIR /build/pjproject/pjsip-apps/src/swig/python
+RUN make \
+    && mkdir -p /opt/pjsua2-py \
+    && cp pjsua2.py /opt/pjsua2-py/ \
+    && find build -name "_pjsua2*.so" -exec cp {} /opt/pjsua2-py/ \; \
+    && ls -l /opt/pjsua2-py
+
+FROM python:${PYTHON_VERSION}-slim-bookworm
 ENV DEBIAN_FRONTEND=noninteractive \
-    PJ_VERSION=2.14.1 \
-    LD_LIBRARY_PATH=/usr/local/lib \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    LD_LIBRARY_PATH=/opt/pjsip/lib \
     CONFIG_PATH=/config/config.yaml \
     AUDIO_DIR=/audio \
-    PYTHONUNBUFFERED=1
-
-# ---- system + build deps ----
+    WEB_PORT=8080
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential pkg-config swig \
-        libasound2-dev libssl-dev libsrtp2-dev libopus-dev \
-        wget ca-certificates ffmpeg tzdata \
-    && ln -sf /usr/bin/python3 /usr/local/bin/python \
-    && rm -rf /var/lib/apt/lists/*
+        ffmpeg tzdata ca-certificates libasound2 libssl3 libopus0 libuuid1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 app \
+    && useradd --system --uid 10001 --gid app --home-dir /app --shell /usr/sbin/nologin app
+COPY --from=pjsip /opt/pjsip/lib /opt/pjsip/lib
+COPY --from=pjsip /opt/pjsua2-py/ /usr/local/lib/python3.11/site-packages/
+RUN python -c "import pjsua2; ep = pjsua2.Endpoint(); ep.libCreate(); print('pjsua2', ep.libVersion().full); ep.libDestroy()"
 
-# ---- build PJSIP with shared libs + pjsua2 python module ----
-WORKDIR /tmp
-RUN wget -q "https://github.com/pjsip/pjproject/archive/refs/tags/${PJ_VERSION}.tar.gz" \
-    && tar xzf "${PJ_VERSION}.tar.gz" && rm "${PJ_VERSION}.tar.gz"
-WORKDIR /tmp/pjproject-${PJ_VERSION}
-RUN printf 'export CFLAGS += -fPIC\n' > user.mak \
-    && ./configure --enable-shared --disable-video \
-    && make dep && make && make install && ldconfig
-# pjsua2 SWIG python bindings
-WORKDIR /tmp/pjproject-${PJ_VERSION}/pjsip-apps/src/swig/python
-RUN make && make install
-RUN python -c "import pjsua2; print('pjsua2 OK')"
-
-# ---- python app deps ----
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-# Fail the build early if the offline geo dataset can't load. Use python3 explicitly:
-# `python` is symlinked to the Debian system interpreter above, but pip (and uvicorn at
-# runtime) use /usr/local's python3, which is where geonamescache actually installs.
-RUN python3 -c "import geonamescache as g; c=g.GeonamesCache(); assert len(c.get_cities())>1000 and len(c.get_countries())>100; print('geonamescache OK:', len(c.get_cities()), 'cities')"
-RUN python3 -c "import bcrypt, itsdangerous; print('auth deps OK')"
-
-# ---- app ----
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python -c "import geonamescache as g; assert len(g.GeonamesCache().get_cities()) > 1000"
 COPY app ./app
-RUN rm -rf /tmp/pjproject-${PJ_VERSION}
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 0755 /usr/local/bin/entrypoint.sh && python -m compileall -q app
 
 VOLUME ["/config", "/audio"]
-EXPOSE 8080
-# SIP signalling (UDP/TCP) + a generous RTP range for media
-EXPOSE 5060/udp 5060/tcp
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+EXPOSE 8080 5060/udp 5060/tcp
+STOPSIGNAL SIGTERM
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/api/health' % os.environ.get('WEB_PORT','8080'), timeout=4)" || exit 1
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["python", "-m", "app"]

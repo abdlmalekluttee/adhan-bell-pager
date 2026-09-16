@@ -8,12 +8,12 @@ from __future__ import annotations
 import datetime
 from zoneinfo import ZoneInfo
 
-from adhanpy.PrayerTimes import PrayerTimes
 from adhanpy.calculation.CalculationMethod import CalculationMethod
 from adhanpy.calculation.CalculationParameters import CalculationParameters
 from adhanpy.calculation.HighLatitudeRule import HighLatitudeRule
 from adhanpy.calculation.Madhab import Madhab
 from adhanpy.calculation.PrayerAdjustments import PrayerAdjustments
+from adhanpy.PrayerTimes import PrayerTimes
 
 from . import config, timetable
 
@@ -41,7 +41,7 @@ def _manual_times_for_date(date: datetime.date) -> dict[str, datetime.datetime |
     """Build tz-aware datetimes from the uploaded timetable for this date.
 
     Prayers with no time in the timetable (e.g. a blank Fajr column) come back as
-    None and are simply not paged. Per-prayer minute adjustments still apply.
+    None and are simply not paged. Times are used exactly as given (no adjustments).
     """
     cfg = config.get()
     tz = ZoneInfo(cfg.location.timezone)
@@ -76,9 +76,12 @@ def times_for_date(date: datetime.date) -> dict[str, datetime.datetime | None]:
     for name in PRAYERS:
         t = getattr(pt, name)
         if t.tzinfo is None:
-            t = t.replace(tzinfo=ZoneInfo("UTC")).astimezone(tz)
-        out[name] = t
-    out["sunrise"] = pt.sunrise
+            t = t.replace(tzinfo=ZoneInfo("UTC"))
+        out[name] = t.astimezone(tz)
+    sunrise = pt.sunrise
+    if sunrise.tzinfo is None:
+        sunrise = sunrise.replace(tzinfo=ZoneInfo("UTC"))
+    out["sunrise"] = sunrise.astimezone(tz)
     return out
 
 

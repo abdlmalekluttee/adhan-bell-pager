@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build release assets for
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test
+        run: pip install -r requirements-dev.txt && pytest -q
+      - name: Build release bundle
+        id: bundle
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          ./scripts/make_release.sh "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Publish assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.bundle.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --title "Adhan & Bell Pager $TAG" --notes-file dist/RELEASE_NOTES.md --verify-tag
+          fi
