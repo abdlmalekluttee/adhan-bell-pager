@@ -61,5 +61,5 @@ jobs:
           curl -fsS http://127.0.0.1:18080/api/health
           curl -fsS http://127.0.0.1:18080/ | grep -q "Adhan &amp; Bell Pager"
           docker exec abp python -c "import pjsua2; print('pjsua2 ok')"
-          docker exec abp id -u | grep -q 10001
+          test "$(docker exec abp stat -c %u /proc/1)" = "10001"   # the service process runs unprivileged
           docker logs abp | tail -20
