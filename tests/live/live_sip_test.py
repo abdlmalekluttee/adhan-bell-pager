@@ -337,8 +337,12 @@ def test_scheduled_and_policy(api: Client) -> None:
     while _clock(api) < end:
         time.sleep(5)
     wait_idle(api, 120)
-    bells_hist = {i["title"]: i for i in api.get("/api/bells/history", params={"limit": 20}).json()["items"]}
-    adhan_hist = {i["title"]: i for i in api.get("/api/adhan/history", params={"limit": 10}).json()["items"]}
+    # newest first: keep the first (latest) execution per title so earlier runs do not mask this one
+    bells_hist, adhan_hist = {}, {}
+    for i in api.get("/api/bells/history", params={"limit": 20}).json()["items"]:
+        bells_hist.setdefault(i["title"], i)
+    for i in api.get("/api/adhan/history", params={"limit": 10}).json()["items"]:
+        adhan_hist.setdefault(i["title"], i)
     before = bells_hist.get("Bell before Adhan", {})
     during = bells_hist.get("Bell during Adhan", {})
     alone = bells_hist.get("Bell alone", {})

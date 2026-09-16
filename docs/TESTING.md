@@ -8,7 +8,7 @@ Three kinds of evidence are kept apart in this project:
 | **Simulated** | End-to-end flows with a fake SIP backend (`SIP_SIMULATE=1`) | automated tests and UI review |
 | **Live** | Real registration, calls, RTP and scheduling against a real PBX and auto-answer extension | `tests/live/live_sip_test.py` (manual, credentials from environment) |
 
-## Automated tests (123 tests)
+## Automated tests (119 tests)
 
 ```bash
 pip install -r requirements-dev.txt
@@ -52,7 +52,7 @@ SSH_HOST=<vm-ssh-alias> SUDO_PASSWORD=… python tests/live/live_sip_test.py --r
 | SIP over TCP | Pass | Registered over TCP and played a call; switched back to UDP |
 | Wrong SIP password | Pass | 403 with a clear message, next retry scheduled (bounded back-off), recovered when fixed. Limited to one failed attempt to avoid PBX intrusion bans. |
 | Scheduled bell and scheduled Adhan | Pass | Bell and Adhan (from an imported one-day timetable) started within 1 s of their minute |
-| Conflict policy (Adhan vs bells) | Pass (run 2) | See below |
+| Conflict policy (Adhan vs bells) | Pass (run 3) | See below |
 | Restart during a due bell | Pass | Container stopped 10 s before the bell and started 20 s after: re-registered; the bell played **once**, 22 s late (inside the 60 s grace); history total +1 |
 | Network interruption to the PBX (> expiry) | Pass | Loss detected after ~110 s (*The PBX could not be reached*, retry scheduled); a call during the outage failed cleanly; re-registered 19 s after restoring connectivity |
 
@@ -62,10 +62,20 @@ during a test broadcast.
 
 ### Conflict policy run
 
-Run 1 used a 45 s bell that finished before the Adhan minute, so no interruption could occur (a test-design error).
-Run 2 used a 75 s bell overlapping the Adhan:
+The first two attempts could not exercise the policy because of test-design errors (a 45 s bell that ended before
+the Adhan minute; then re-using a prayer that had already played that day, which the app correctly refuses to play
+twice). Run 3, on the final deployment, scheduled a 75 s bell at 01:07, an Asr Adhan (40 s recording) and a second
+bell at 01:08, and a third bell at 01:11. Execution history and service log:
 
-RESULTS_RUN2
+| Broadcast | Result |
+|---|---|
+| Bell at 01:07 (75 s) | **Interrupted** after 57.6 s — *Interrupted by 'Asr Adhan' (higher priority)* |
+| Asr Adhan at 01:08 | **Played** on time (delay 0 s), 40 s |
+| Bell at 01:08 (due during the Adhan) | **Played 43 s late** after the Adhan finished (inside the 60 s maximum delay) |
+| Bell at 01:11 | Played on time |
+
+(The harness itself reported this scenario as failed because it matched history entries by title and picked up older
+runs; the lookup has been fixed. The table above is taken directly from the execution history.)
 
 ## UI review
 
