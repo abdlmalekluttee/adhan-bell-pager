@@ -28,7 +28,7 @@ jobs:
         id: bundle
         run: |
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
-          ./scripts/make_release.sh "$TAG"
+          bash scripts/make_release.sh "$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Publish assets
         env:

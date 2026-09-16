@@ -11,7 +11,7 @@ name="adhan-bell-pager-${version}"
 rm -rf dist && mkdir -p "dist/$name"
 git archive --format=tar HEAD | tar -x -C "dist/$name"
 rm -rf "dist/$name/tests/live" "dist/$name/.github" "dist/$name/assets/screenshots-v1"
-( cd dist && tar czf "$name.tar.gz" "$name" && rm -rf "$name" )
+( cd dist && tar --owner=0 --group=0 --numeric-owner -czf "$name.tar.gz" "$name" && rm -rf "$name" )
 ./scripts/check_secrets.sh "dist/$name.tar.gz"
 awk -v h="## [$version]" 'index($0, h) == 1 {on = 1; next} on && index($0, "## [") == 1 {exit} on {print}' CHANGELOG.md   > dist/RELEASE_NOTES.md
 [ -s dist/RELEASE_NOTES.md ] || echo "See CHANGELOG.md" > dist/RELEASE_NOTES.md
