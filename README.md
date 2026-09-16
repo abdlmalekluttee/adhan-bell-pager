@@ -111,6 +111,17 @@ SIP_SIMULATE=1 WEB_PORT=8931 WEB_BIND=127.0.0.1 python -m app
 `SIP_SIMULATE=1` replaces PJSIP with a simulator (the UI shows a banner). Real calls need the Docker image, which
 compiles PJSIP with the Python bindings.
 
+## Maintenance and automation
+
+| Process | Automated? | How |
+|---|---|---|
+| Lint, 120+ tests, JavaScript/shell checks, Docker build and container smoke test | Yes | GitHub Actions `CI` on every push and pull request |
+| Dependency update pull requests (Python, GitHub Actions, Docker base image) | Yes | Dependabot (weekly/monthly); security alerts and fixes enabled |
+| Release assets (bundle, checksums, notes) | Yes, on tags | `Release` workflow on `v*` tags |
+| Merging dependency updates | **No** | A maintainer merges only after CI passes (branch protection is not available for this private repository's plan) |
+| Deploying to servers | **No** | Run `scripts/upgrade.sh` with a release bundle; nothing deploys automatically |
+| Live SIP tests against a real PBX | **No** | `tests/live/live_sip_test.py`, run by hand with your own test extension |
+
 ## License
 
 [PolyForm Noncommercial 1.0.0](LICENSE) — free for noncommercial use, including schools, mosques and other
