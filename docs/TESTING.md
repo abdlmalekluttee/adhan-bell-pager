@@ -4,11 +4,11 @@ Three kinds of evidence are kept apart in this project:
 
 | Kind | What it proves | Where |
 |---|---|---|
-| **Automated** | Logic and API behaviour, run on every push in CI | `tests/` (pytest), JS syntax, shell syntax, Docker build + container smoke test |
+| **Automated** | Logic and API behaviour, run on every push in CI | `tests/` (pytest), JS syntax, shell syntax, Docker build + container smoke test, ACME flow against Pebble |
 | **Simulated** | End-to-end flows with a fake SIP backend (`SIP_SIMULATE=1`) | automated tests and UI review |
 | **Live** | Real registration, calls, RTP and scheduling against a real PBX and auto-answer extension | `tests/live/live_sip_test.py` (manual, credentials from environment) |
 
-## Automated tests (119 tests)
+## Automated tests (141 tests, plus 2 Pebble integration tests)
 
 ```bash
 pip install -r requirements-dev.txt
@@ -24,6 +24,8 @@ pytest -q
 | Authentication | `test_auth.py` | forced first password change, lockout, uniform unknown-user error, CSRF and logout revocation, JSON-only sign-in, disabled users, users without roles, session expiry, long passwords, **v1.7 upgrade** (config, destinations, prayer settings, users.json migration, backups, idempotence), corrupt v1 user store never falls back to default credentials |
 | Active Directory | `test_directory.py` | nested-group sign-in, DOMAIN\\user and UPN forms, union of groups, full-admin mapping, wrong password / unmapped / disabled accounts, empty-password bind refused, directory outage (within refresh, within grace, beyond grace, recovery, new sign-ins fail, local accounts work), revoked membership ends sessions, mapping removal applies immediately, local account precedence, bind password hidden and encrypted, connection/user/group lookup tools, config validation, mapping escalation guard — against an in-memory LDAP directory |
 | Audio and API workflows | `test_audio_and_api.py` | repeat/duration rendering, upload sanitising, conflicts, delete guard, full bell workflow with zones and audit trail, manual conflict via API, SIP validation, public health endpoint, security headers |
+| HTTPS / Let's Encrypt | `test_https.py` | host name, email, provider and URL validation (IP addresses, internal names, plain-HTTP cPanel refused; IDN and wildcards accepted), API tokens encrypted and never returned or audited, all endpoints need *Manage HTTPS certificates*, Cloudflare API (zone lookup by parent names, quoted TXT content, delete, token/zone/network errors), cPanel UAPI (domain list, SOA serial, add with FQDN, remove by line, edit when a record holds several values, 401 / non-JSON / access denied / TLS errors), provider test with write test, DNS propagation wait (success, timeout, fallback without DNS access), successful request installs the certificate (key encrypted, files written), failures back off 1 h then 2 h and recovery is audited, certificate/key mismatch refused, renewal at two thirds of the lifetime with back-off and only while HTTPS is on, status states for short-lived and 90-day certificates, certificate removal, dashboard HTTPS cell, **real TLS listener** serving HTTPS and switching to a renewed certificate without restart, port-in-use reported, HTTP→HTTPS redirect only while serving (IP address sent to the certificate name, health check never redirected), `Secure` cookies over HTTPS only, CLI `disable-https` |
+| ACME end to end | `integration/test_pebble_acme.py` | against **Pebble** (Let's Encrypt's test server) and its DNS test server: account, order for a name and a wildcard, DNS-01 validation, finalization, download, installation, renewal reusing the account; a wrong TXT value fails validation and the record is still removed. Runs in the CI job *Let's Encrypt flow (Pebble)*. |
 | Translations | `test_i18n.py` | every UI string has an Arabic translation, placeholders match, translations are Arabic |
 
 ## Live tests on the development VM
@@ -77,6 +79,23 @@ bell at 01:08, and a third bell at 01:11. Execution history and service log:
 (The harness itself reported this scenario as failed because it matched history entries by title and picked up older
 runs; the lookup has been fixed. The table above is taken directly from the execution history.)
 
+## HTTPS with Let's Encrypt
+
+| Check | Kind | Result |
+|---|---|---|
+| Unit and API tests (`test_https.py`, 22 tests) | Automated | Pass |
+| Full ACME DNS-01 flow against Pebble in CI | Automated | Pass |
+| Same Pebble tests run locally against Pebble started temporarily on the development VM | Simulated | Pass (2/2) |
+| End to end through the web UI: fresh instance, settings saved, *Test DNS provider* with write test, *Request certificate*, progress steps, certificate installed, HTTPS served on the configured port with the new certificate, plain HTTP still available, dashboard HTTPS cell, Arabic RTL page | Simulated (Pebble as the certificate authority) | Pass. Found and fixed: a 6-day certificate was shown as *Expiring soon* (states now scale with the certificate lifetime); the step label showed the full directory URL. |
+| Container drops to uid 10001 keeping only `NET_BIND_SERVICE`; binding port 443 as that user | Live (VM, Docker) | Pass |
+| Upgrade of the VM from 2.0.0 to 2.1.0 with `upgrade.sh` (backup, build, health) | Live | Pass; SIP registered again after the restart |
+| From the deployed container: Cloudflare API reachable and an invalid token reported as *refused the API token*; unreachable cPanel host reported as *unreachable*; Let's Encrypt production and staging directories reachable; authoritative name servers found through public resolvers and answer TXT queries directly (so the propagation check works on this network) | Live | Pass |
+
+**Not verified live:** issuing a certificate from the real Let's Encrypt service, and the real Cloudflare and cPanel
+DNS APIs with valid tokens. No domain or API token was available. The provider tests reproduce each API's documented
+requests and responses, but not every account variation (for example Cloudflare account-owned tokens, or cPanel
+servers with DNS clustering). Do a first request with **Let's Encrypt staging** and check the steps.
+
 ## UI review
 
 * Every page reviewed in the browser at 1440×900 and 390×844, English and Arabic (RTL), light and dark.
@@ -97,3 +116,4 @@ runs; the lookup has been fixed. The table above is taken directly from the exec
   on the Docker service being enabled and `restart: unless-stopped` (both verified); a container restart was tested.
 * **Paging groups / multiple destinations on the real PBX**: parallel and sequential paging were tested with the
   simulator; the live tests used one destination.
+* **Let's Encrypt, Cloudflare and cPanel with real accounts** (see *HTTPS with Let's Encrypt* above).

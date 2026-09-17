@@ -126,4 +126,5 @@ To go back to v1: stop v2, restore `adhan-pager-v1-backup.tgz` into the v1 direc
 ## Test VM deployment (this project)
 
 The development VM runs the service from `/opt/adhan-bell-pager` on port **8090** (port 8080 belongs to another
-application there). UFW allows 8090/tcp from the management network and SIP/RTP only from the PBX.
+application there). UFW allows 8090/tcp (HTTP) and 8443/tcp (HTTPS, once a certificate is set up) from 10.44.0.0/16 and 172.30.0.0/16,
+and SIP/RTP only from the PBX.
