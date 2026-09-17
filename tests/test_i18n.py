@@ -30,7 +30,7 @@ def test_translations_are_arabic():
     latin_only = [en for en, tr in ar.items()
                   if re.search(r"[A-Za-z]{4,}", en) and not re.search(r"[؀-ۿ]", tr)]
     allowed = {"English", "SIP", "PBX", "LDAPS", "StartTLS", "Opus", "Speex", "iLBC", "G.722", "RTP", "NTP", "UDP",
-               "TCP", "TLS"}
+               "TCP", "TLS", "HTTPS", "Let's Encrypt"}
 
     def identifier_like(s: str) -> bool:
         # DNs, HTTP verbs, single tokens and placeholder-only strings stay as they are

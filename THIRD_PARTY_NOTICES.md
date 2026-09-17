@@ -30,16 +30,21 @@ License texts: `app/static/vendor/tabler/LICENSE`, `app/static/vendor/tabler-ico
 
 | Package | License |
 |---|---|
+| acme, josepy (Certbot project) | Apache-2.0 |
 | adhanpy | MIT |
 | bcrypt | Apache-2.0 |
 | cryptography | Apache-2.0 or BSD-3-Clause |
+| dnspython | ISC |
 | FastAPI, Starlette | MIT, BSD-3-Clause |
 | geonamescache (GeoNames data, CC BY 4.0) | MIT |
 | ldap3 | LGPL-3.0 |
 | ntplib | MIT |
 | pydantic | MIT |
 | python-multipart | Apache-2.0 |
+| pyOpenSSL | Apache-2.0 |
+| pyRFC3339 | MIT |
 | PyYAML | MIT |
+| requests | Apache-2.0 |
 | tzdata | Apache-2.0 |
 | uvicorn | BSD-3-Clause |
 

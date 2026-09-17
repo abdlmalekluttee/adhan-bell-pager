@@ -29,6 +29,7 @@ const ROUTES = [
   { path: "/admin/users", page: "admin-users", module: "system", title: "Users", icon: "users", nav: "system", any: ["system.users.manage"] },
   { path: "/admin/roles", page: "admin-roles", module: "system", title: "Roles", icon: "shield-lock", nav: "system", any: ["system.roles.manage", "system.users.manage"] },
   { path: "/admin/directory", page: "admin-directory", module: "system", title: "Active Directory", icon: "sitemap", nav: "system", any: ["system.directory.manage"] },
+  { path: "/admin/https", page: "admin-https", module: "system", title: "HTTPS", icon: "lock", nav: "system", any: ["system.certificates.manage"] },
   { path: "/admin/time", page: "admin-time", module: "system", title: "Time & priorities", icon: "clock-cog", nav: "system", any: ["system.settings.manage"] },
   { path: "/admin/audit", page: "admin-audit", module: "system", title: "Audit log", icon: "list-search", nav: "system", any: ["system.audit.view"] },
   { path: "/admin/logs", page: "admin-logs", module: "system", title: "Service logs", icon: "terminal-2", nav: "system", any: ["system.logs.view"] },

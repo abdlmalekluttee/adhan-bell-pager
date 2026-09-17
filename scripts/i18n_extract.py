@@ -70,7 +70,8 @@ def backend_messages() -> set[str]:
     """Plain string constants from user-facing backend modules (f-strings are skipped)."""
     files = ["app/routers/*.py", "app/sip/base.py", "app/sip/engine.py", "app/rbac.py", "app/bells.py",
              "app/dispatcher.py", "app/scheduler.py", "app/executions.py", "app/accounts.py", "app/security.py",
-             "app/directory.py", "app/config.py", "app/audio.py", "app/timetable.py"]
+             "app/directory.py", "app/config.py", "app/audio.py", "app/timetable.py", "app/certificates.py",
+             "app/dns_providers.py", "app/https_server.py"]
     out: set[str] = set()
     for pattern in files:
         for f in ROOT.glob(pattern):
@@ -100,7 +101,7 @@ def write_ar(data: dict[str, str]) -> None:
     AR_FILE.write_text(
         "// Arabic translations, keyed by the exact English text used in the code.\n"
         "// Generated and checked by scripts/i18n_extract.py; keep this file valid JSON inside the braces.\n"
-        "export const AR = " + json.dumps(ordered, ensure_ascii=False, indent=2) + ";\n", encoding="utf-8")
+        "export const AR = " + json.dumps(ordered, ensure_ascii=False, indent=2) + ";\n", encoding="utf-8", newline="\n")
 
 
 def main() -> int:

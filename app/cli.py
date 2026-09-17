@@ -4,6 +4,7 @@
     docker compose exec adhan-bell-pager python -m app.cli reset-password --username admin
     docker compose exec adhan-bell-pager python -m app.cli users
     docker compose exec adhan-bell-pager python -m app.cli disable-directory
+    docker compose exec adhan-bell-pager python -m app.cli disable-https
 """
 from __future__ import annotations
 
@@ -76,6 +77,19 @@ def disable_directory(args) -> int:
     return 0
 
 
+def disable_https(args) -> int:
+    from . import audit, certificates, db
+    _open()
+    cfg = certificates.get_config()
+    cfg["enabled"] = False
+    cfg["redirect_http"] = False
+    db.set_setting(certificates.SETTINGS_KEY, cfg)
+    audit.record("https.update", actor="cli", details={"enabled": False, "redirect_http": False})
+    print("HTTPS and the HTTP-to-HTTPS redirect are turned off. The redirect stops within a few seconds; "
+          "restart the service to close the HTTPS port. The certificate is kept.")
+    return 0
+
+
 def backup(args) -> int:
     """Consistent snapshot of settings, database, secret key and audio as a .tar.gz."""
     import datetime
@@ -139,6 +153,7 @@ def main(argv=None) -> int:
     rp.set_defaults(fn=reset_password)
     sub.add_parser("users", help="list users and roles").set_defaults(fn=list_users)
     sub.add_parser("disable-directory", help="turn off Active Directory sign-in").set_defaults(fn=disable_directory)
+    sub.add_parser("disable-https", help="turn off HTTPS and the HTTP-to-HTTPS redirect").set_defaults(fn=disable_https)
     bp = sub.add_parser("backup", help="write a consistent backup archive (settings, database, audio)")
     bp.add_argument("--out", help="archive path (default: <config>/backups/adhan-bell-pager-<version>-<time>.tar.gz)")
     bp.set_defaults(fn=backup)

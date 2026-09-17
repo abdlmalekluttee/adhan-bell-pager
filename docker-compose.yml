@@ -4,7 +4,8 @@
 #   docker compose up -d --build
 #
 # Host networking is strongly recommended for SIP: registration and RTP audio
-# work without Docker NAT rewriting SIP/SDP. The web UI listens on WEB_PORT.
+# work without Docker NAT rewriting SIP/SDP. The web UI listens on WEB_PORT, and on
+# HTTPS_PORT once a certificate is set up in Administration › HTTPS.
 services:
   adhan-bell-pager:
     build: .
@@ -15,6 +16,7 @@ services:
     environment:
       TZ: ${TZ:-Africa/Tripoli}
       WEB_PORT: ${WEB_PORT:-8080}
+      HTTPS_PORT: ${HTTPS_PORT:-8443}   # used only after HTTPS is turned on in Administration › HTTPS
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
       SIP_LOG_LEVEL: ${SIP_LOG_LEVEL:-3}
     volumes:

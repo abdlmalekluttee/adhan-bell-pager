@@ -1,7 +1,9 @@
 # Runtime dependencies (tested versions). Dependabot proposes updates; CI must pass before merging.
+acme==5.8.0
 adhanpy==1.0.5
 bcrypt==5.0.0
 cryptography==50.0.1
+dnspython==2.8.0
 fastapi==0.141.1
 geonamescache==3.0.2
 ldap3==2.9.1
@@ -9,6 +11,7 @@ ntplib==0.4.0
 pydantic==2.13.5
 python-multipart==0.0.32
 PyYAML==6.0.3
+requests==2.34.2
 starlette==1.6.0
 tzdata==2026.4
 uvicorn[standard]==0.53.0

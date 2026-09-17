@@ -48,6 +48,8 @@ CATALOG: list[tuple[str, str, str, str]] = [
      "Timezone, time sync and the broadcast conflict policy."),
     ("system.directory.manage", "system", "Configure Active Directory",
      "Directory connection and group-to-role mappings."),
+    ("system.certificates.manage", "system", "Manage HTTPS certificates",
+     "HTTPS, Let's Encrypt certificates and the DNS provider API token."),
     ("system.users.manage", "system", "Manage users", "Create, edit, disable users and assign roles."),
     ("system.roles.manage", "system", "Manage roles", "Create and edit custom roles."),
     ("system.audit.view", "system", "View audit log", "See who changed what."),

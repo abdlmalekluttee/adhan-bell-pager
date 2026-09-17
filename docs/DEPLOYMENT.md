@@ -12,7 +12,7 @@
 ```bash
 sudo mkdir -p /opt/adhan-bell-pager && sudo chown "$USER" /opt/adhan-bell-pager
 cd /opt/adhan-bell-pager
-tar xzf ~/adhan-bell-pager-2.0.0.tar.gz --strip-components=1      # or: git clone … .
+tar xzf ~/adhan-bell-pager-2.1.0.tar.gz --strip-components=1      # or: git clone … .
 cp .env.example .env && nano .env                                  # WEB_PORT, TZ
 ./scripts/install.sh
 ```
@@ -28,14 +28,16 @@ Open `http://<server>:<WEB_PORT>`, sign in as **admin / admin**, and choose a ne
 4. **Adhan**: location, prayer schedule, sounds, where it plays. Use *Test* on Adhan › Today.
 5. **School Bells**: timetables, weekly schedule, holidays ([SCHOOL_BELLS.md](SCHOOL_BELLS.md)).
 6. Administration › **Users** / **Active Directory**.
+7. Optional: Administration › **HTTPS** for a Let's Encrypt certificate ([HTTPS.md](HTTPS.md)).
 
 ### `.env` settings
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `WEB_PORT` | 8080 | Web UI port (host networking) |
+| `WEB_PORT` | 8080 | Web UI port, plain HTTP (host networking) |
+| `HTTPS_PORT` | 8443 | HTTPS port, opened once a certificate is set up in Administration › HTTPS (443 works) |
 | `TZ` | Africa/Tripoli | Container OS timezone (logs). Schedules use the timezone set in the app. |
-| `AUTH_COOKIE_SECURE` | false | `true` when served over HTTPS (reverse proxy) |
+| `AUTH_COOKIE_SECURE` | false | `true` only behind a separate HTTPS reverse proxy (built-in HTTPS handles cookies itself) |
 | `SIP_LOG_LEVEL` | 3 | 4 logs SIP messages for troubleshooting |
 | `APP_VERSION` | set by scripts | Image tag used by compose |
 
@@ -47,7 +49,8 @@ Never put SIP or directory passwords in `.env`; enter them in the web UI.
 |---|---|
 | `config/config.yaml` | Phone system, speakers, zones, Adhan and time settings (includes the SIP password; mode 600) |
 | `config/app.db` | Users, roles, sessions, bells, history, audit log (SQLite) |
-| `config/secret.key` | Key that encrypts the directory bind password — back it up with the database |
+| `config/secret.key` | Key that encrypts the directory bind password, DNS API tokens and the TLS private key — back it up with the database |
+| `config/tls/` | Current HTTPS certificate and key for the listener (rewritten from the database at start) |
 | `config/adhan-pager.log*` | Rotating service log |
 | `audio/` | Adhan recordings; `audio/bells/` bell sounds |
 

@@ -31,6 +31,7 @@
 | | Configure SIP | SIP account, codecs, call behaviour, reconnect |
 | | System settings | Timezone, time sync, broadcast priority settings |
 | | Configure Active Directory | Directory connection and group mappings |
+| | Manage HTTPS certificates | HTTPS settings, Let's Encrypt certificates, DNS provider API token |
 | | Manage users | Create, edit, disable users; assign roles |
 | | Manage roles | Create and edit custom roles |
 | | View audit log | Who changed what |

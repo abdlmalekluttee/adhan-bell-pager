@@ -20,12 +20,13 @@ class LoginIn(BaseModel):
     remember: bool = False
 
 
-def _set_cookies(resp: JSONResponse, token: str, csrf: str, remember: bool) -> None:
+def _set_cookies(resp: JSONResponse, token: str, csrf: str, remember: bool, *, https: bool = False) -> None:
     max_age = accounts.REMEMBER_TTL if remember else None
+    secure = accounts.COOKIE_SECURE or https      # cookies set over HTTPS are never sent over plain HTTP
     resp.set_cookie(accounts.SESSION_COOKIE, token, max_age=max_age, httponly=True, samesite="strict",
-                    secure=accounts.COOKIE_SECURE, path="/")
+                    secure=secure, path="/")
     resp.set_cookie(accounts.CSRF_COOKIE, csrf, max_age=max_age, httponly=False, samesite="strict",
-                    secure=accounts.COOKIE_SECURE, path="/")
+                    secure=secure, path="/")
 
 
 def _clear_cookies(resp: JSONResponse) -> None:
@@ -96,7 +97,7 @@ def login(body: LoginIn, request: Request):
     out = profile(user)
     out["server"] = server_info()
     resp = JSONResponse(out)
-    _set_cookies(resp, token, csrf, body.remember)
+    _set_cookies(resp, token, csrf, body.remember, https=request.url.scheme == "https")
     return resp
 
 

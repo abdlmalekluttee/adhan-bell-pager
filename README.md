@@ -46,6 +46,7 @@ upgrade in place.
 - Roles for Adhan-only, School-Bells-only, operators, viewers and full administrators, plus custom roles
 - Server-side permission checks on every action; effective permissions shown with their sources
 - Optional Active Directory sign-in with group-to-role mapping (LDAPS/StartTLS)
+- Built-in HTTPS with free Let's Encrypt certificates, validated through Cloudflare or cPanel DNS and renewed automatically — the server can stay on a private network
 - Audit log, CSRF protection, strict CSP, encrypted directory credentials, local recovery administrator
 
 **Interface**
@@ -71,7 +72,7 @@ Requirements: Linux with Docker and Docker Compose v2, network access to your PB
 ```bash
 sudo mkdir -p /opt/adhan-bell-pager && sudo chown "$USER" /opt/adhan-bell-pager
 cd /opt/adhan-bell-pager
-curl -L https://github.com/abdlmalekluttee/adhan-bell-pager/releases/latest/download/adhan-bell-pager-2.0.0.tar.gz | tar xz --strip-components=1
+curl -L https://github.com/abdlmalekluttee/adhan-bell-pager/releases/latest/download/adhan-bell-pager-2.1.0.tar.gz | tar xz --strip-components=1
 cp .env.example .env        # set WEB_PORT and TZ
 ./scripts/install.sh
 ```
@@ -89,6 +90,7 @@ add speakers and zones, and set up the Adhan and School Bells. The full walkthro
 | Scheduling rules, priority policy, restarts and missed broadcasts | [docs/SCHEDULING.md](docs/SCHEDULING.md) |
 | Users, roles and permissions; recovery administrator | [docs/PERMISSIONS.md](docs/PERMISSIONS.md) |
 | Active Directory sign-in | [docs/ACTIVE_DIRECTORY.md](docs/ACTIVE_DIRECTORY.md) |
+| HTTPS with Let's Encrypt (Cloudflare or cPanel DNS) | [docs/HTTPS.md](docs/HTTPS.md) |
 | Phone system (SIP) setup and troubleshooting | [docs/SIP_TROUBLESHOOTING.md](docs/SIP_TROUBLESHOOTING.md) |
 | Security controls and hardening | [docs/SECURITY.md](docs/SECURITY.md) |
 | Test strategy and results | [docs/TESTING.md](docs/TESTING.md) |
@@ -99,7 +101,7 @@ add speakers and zones, and set up the Adhan and School Bells. The full walkthro
 ```bash
 python -m venv .venv && . .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
-pytest                                                # 110+ tests, no PBX needed
+pytest                                                # 140+ tests, no PBX needed
 ruff check app tests scripts
 
 # Run the UI locally with simulated calls and demo data
@@ -115,7 +117,7 @@ compiles PJSIP with the Python bindings.
 
 | Process | Automated? | How |
 |---|---|---|
-| Lint, 110+ tests, JavaScript/shell checks, Docker build and container smoke test | Yes | GitHub Actions `CI` on every push and pull request |
+| Lint, 140+ tests, Let's Encrypt flow against Pebble, JavaScript/shell checks, Docker build and container smoke test | Yes | GitHub Actions `CI` on every push and pull request |
 | Dependency update pull requests (Python, GitHub Actions, Docker base image) | Yes | Dependabot (weekly/monthly); security alerts and fixes enabled |
 | Release assets (bundle, checksums, notes) | Yes, on tags | `Release` workflow on `v*` tags |
 | Merging dependency updates | **No** | A maintainer merges only after CI passes (branch protection is not available for this private repository's plan) |
@@ -145,6 +147,7 @@ Third-party components and their licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_
 - **بث موثوق:** سياسة أولوية واضحة (يدوي ثم الأذان ثم الجرس)، لا يتكرر أي بث حتى بعد إعادة التشغيل، ولا يُبث متأخراً دون علم.
 - **الصلاحيات:** أدوار لمسؤول الأذان فقط أو الأجراس فقط أو المشغل أو المشاهد أو المسؤول الكامل، وأدوار مخصصة،
   وتسجيل دخول اختياري عبر Active Directory، وسجل تدقيق.
+- **HTTPS:** شهادات مجانية من Let's Encrypt تُجدَّد تلقائياً، بالتحقق عبر DNS في Cloudflare أو cPanel، دون فتح الخادم على الإنترنت.
 - **الواجهة:** مبنية على Tabler، عربية كاملة من اليمين إلى اليسار بخط Cairo، وضع فاتح وداكن، تعمل على الهاتف.
 
 ### التثبيت السريع

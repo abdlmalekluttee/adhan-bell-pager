@@ -9,7 +9,21 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import ValidationError
 
-from .. import __version__, audit, clock, config, db, dispatcher, executions, logbuf, ntp, scheduler, sip
+from .. import (
+    __version__,
+    audit,
+    certificates,
+    clock,
+    config,
+    db,
+    dispatcher,
+    executions,
+    https_server,
+    logbuf,
+    ntp,
+    scheduler,
+    sip,
+)
 from ..deps import Authz, Principal, bad_request
 
 router = APIRouter(prefix="/api", tags=["system"])
@@ -97,6 +111,12 @@ def dashboard(request: Request):
         "scheduler": {"ok": sched["healthy"], "running": sched["running"]},
         "storage": {"ok": disk.free > 200 * 1024 * 1024, "free_mb": disk.free // (1024 * 1024)},
     }
+    if certificates.cached_config().get("enabled"):
+        st = certificates.status(https_server.status())
+        cert = st["certificate"] or {}
+        health["https"] = {"ok": st["state"] == "active", "state": st["state"], "days_left": cert.get("days_left"),
+                           "not_after": cert.get("not_after"), "port": st["listener"].get("port"),
+                           "error": st["listener"].get("error") or (st["renewal"]["last_error"] or {}).get("message", "")}
     upcoming = scheduler.get().upcoming(tuple(modules), limit=8)
     return {
         "now": now.isoformat(), "timezone": config.timezone(), "version": __version__,
@@ -109,6 +129,7 @@ def dashboard(request: Request):
             "stop": sorted(p.modules_with("broadcast.stop")),
             "broadcast": sorted(p.modules_with("broadcast")),
             "sip": p.has("system.sip.manage"),
+            "https": p.has("system.certificates.manage"),
         },
     }
 

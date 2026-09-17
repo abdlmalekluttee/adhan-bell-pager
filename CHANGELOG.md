@@ -3,6 +3,28 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-09-17
+
+### Added
+
+- **HTTPS with Let's Encrypt** (Administration › HTTPS): certificates validated through DNS (DNS-01) using the
+  **Cloudflare** or **cPanel** API, so the server can stay on a private network. Host names and wildcards, staging
+  service for tests, provider test that can add and remove a test record, step-by-step progress while a certificate
+  is requested, TXT records always cleaned up, DNS propagation check against the domain's authoritative name servers.
+- **Automatic renewal** after two thirds of the certificate lifetime, retries with back-off (1 h … 12 h), HTTPS status
+  on the dashboard, audit entries for requests, failures, recovery and removal.
+- **Built-in HTTPS listener** on `HTTPS_PORT` (default 8443, 443 supported) next to the plain HTTP port, TLS 1.2+,
+  renewed certificates loaded without a restart; optional HTTP-to-HTTPS redirect; `Secure` cookies over HTTPS.
+- New permission **Manage HTTPS certificates** (included in Full Administrator).
+- `python -m app.cli disable-https` to recover from a wrong redirect.
+- CI job that runs the full ACME flow against Pebble, Let's Encrypt's test server.
+
+### Changed
+
+- The container keeps only the `NET_BIND_SERVICE` capability when it drops to the unprivileged user, so HTTPS can
+  use port 443.
+- Dashboard health cells fit five across on wide screens.
+
 ## [2.0.0] - 2026-09-17
 
 First release of **Adhan & Bell Pager**, the successor of Adhan Pager 1.7. Existing v1 installations upgrade in

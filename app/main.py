@@ -8,15 +8,31 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, accounts, audio, audit, config, db, dispatcher, logbuf, ntp, rbac, scheduler, sip
+from . import (
+    __version__,
+    accounts,
+    audio,
+    audit,
+    certificates,
+    config,
+    db,
+    dispatcher,
+    https_server,
+    logbuf,
+    ntp,
+    rbac,
+    scheduler,
+    sip,
+)
 from .deps import Principal
 from .routers import adhan as adhan_router
 from .routers import admin as admin_router
 from .routers import auth as auth_router
 from .routers import bells as bells_router
+from .routers import https as https_router
 from .routers import system as system_router
 
 logbuf.setup(logging.INFO)
@@ -43,11 +59,13 @@ def start_services(*, start_sip: bool = True) -> None:
         threading.Thread(target=sip.get_engine().start, name="sip-start", daemon=True).start()
     dispatcher.get().start()
     scheduler.get().start()
+    certificates.start()
     audit.record("service.start", details={"version": __version__})
     log.info("Adhan & Bell Pager %s started (timezone %s)", __version__, config.timezone())
 
 
 def stop_services() -> None:
+    certificates.stop()
     scheduler.get().shutdown()
     dispatcher.get().shutdown()
     sip.get_engine().shutdown()
@@ -59,8 +77,16 @@ def stop_services() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import asyncio
     start_services()
+    listener = https_server.HttpsListener(app)
+    https_server.set_listener(listener)
+    listener.attach(asyncio.get_running_loop())
+    await listener.apply()
     yield
+    await listener.stop()
+    https_server.set_listener(None)
+    certificates.set_listener_hook(None)
     stop_services()
 
 
@@ -84,6 +110,9 @@ def _deny(status: int, code: str, message: str) -> JSONResponse:
 @app.middleware("http")
 async def session_guard(request: Request, call_next):
     path = request.url.path
+    target = https_server.redirect_url(request)
+    if target:
+        return RedirectResponse(target, status_code=308)
     request.state.principal = None
     token = request.cookies.get(accounts.SESSION_COOKIE, "")
     if token:
@@ -150,7 +179,7 @@ async def unhandled(request: Request, exc: Exception):
 
 
 for r in (auth_router.router, admin_router.router, system_router.router, adhan_router.router,
-          adhan_router.geo_router, bells_router.router):
+          adhan_router.geo_router, bells_router.router, https_router.router):
     app.include_router(r)
 
 

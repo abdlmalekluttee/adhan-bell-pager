@@ -1,7 +1,7 @@
 // Dashboard: system health, what is playing, what is next, and recent problems.
 
 import { api } from "../api.js";
-import { fmtAgo, fmtCountdown, fmtDateTime, fmtTime, t, tn } from "../i18n.js";
+import { fmtAgo, fmtCountdown, fmtDate, fmtDateTime, fmtTime, t, tn } from "../i18n.js";
 import { can, kickBroadcast, onBroadcast, serverNow, state } from "../store.js";
 import { $, broadcastTitle, errorState, html, icon, moduleChip, on, pageHeader, resultsTable, setHTML, statusBadge } from "../ui.js";
 
@@ -57,6 +57,14 @@ export default async function dashboard(ctx) {
       { ok: h.storage.ok, iconName: "database", label: t("Storage"), value: h.storage.ok ? t("OK") : t("Almost full"),
         detail: t("{mb} MB free", { mb: h.storage.free_mb.toLocaleString() }) },
     ];
+    if (h.https) {
+      const hs = h.https;
+      const value = { active: t("Certificate valid"), no_certificate: t("No certificate"), expiring: t("Expiring soon"), expired: t("Expired"),
+        renewal_failing: t("Renewal failing"), listener_error: t("Not serving") }[hs.state] || hs.state;
+      const detail = hs.error ? t(hs.error)
+        : hs.not_after ? t("Valid until {date} · {days}", { date: fmtDate(hs.not_after), days: tn(hs.days_left, "{n} day left", "{n} days left") }) : "";
+      cells.push({ ok: hs.ok, iconName: "lock", label: t("HTTPS"), value, detail, link: d.can.https ? "#/admin/https" : null });
+    }
     const allOk = cells.every((c) => c.ok);
     return html`<div class="card">
       <div class="card-header">
