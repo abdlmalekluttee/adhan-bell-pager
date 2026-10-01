@@ -72,7 +72,7 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build (includes PJSIP and a pjsua2 import check)
         uses: docker/build-push-action@v6
         with:
