@@ -3,7 +3,7 @@ acme==5.8.0
 adhanpy==1.0.5
 bcrypt==5.0.0
 cryptography==50.0.1
-dnspython==2.8.0
+dnspython==2.9.0
 fastapi==0.141.1
 geonamescache==3.0.2
 ldap3==2.9.1
